@@ -119,7 +119,7 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-// Minimal markdown-lite → HTML for showing Read.me (no external deps).
+// Minimal markdown-lite → HTML for showing Readme (no external deps).
 function mdInline(s) {
   s = esc(s);
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
@@ -400,10 +400,10 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Handleiding: toont Read.me als leesbare pagina
+    // Handleiding: toont Readme als leesbare pagina
     if (pathname === '/handleiding') {
       let md;
-      try { md = await fs.readFile(path.join(__dirname, 'Read.me'), 'utf-8'); }
+      try { md = await fs.readFile(path.join(__dirname, 'Readme'), 'utf-8'); }
       catch { md = '# Handleiding niet gevonden'; }
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(handleidingPageHtml(md));
