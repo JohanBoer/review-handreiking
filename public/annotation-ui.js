@@ -37,35 +37,65 @@
   waitForContent(loadAnnotations);
 
   function loadAnnotations() {
+    fetchAnnotations(function (list) {
+      list.forEach(applyHighlight);
+      renderPanel();
+    });
+  }
+
+  // Fetches annotations for the current PAGE and updates the panel right away
+  // (independent of whether the page content has finished rendering yet).
+  // onDone, if given, runs after annotations are set (used to apply highlights
+  // once the DOM is actually ready).
+  function fetchAnnotations(onDone) {
     fetch('/api/annotations?page=' + encodeURIComponent(PAGE))
       .then(function (r) { return r.json(); })
       .then(function (list) {
         annotations = list;
-        list.forEach(applyHighlight);
         renderPanel();
         ensureContentObserver();
+        if (onDone) onDone(list);
       })
       .catch(function (e) { console.warn('[review] init failed:', e); });
   }
 
   // React (re)hydration can wipe our <mark> nodes after we've inserted them
-  // (e.g. hydration mismatch recovery on a fresh full page load). Watch the
-  // content root and re-anchor any annotation whose mark disappeared.
+  // (e.g. hydration mismatch recovery on a fresh full page load). Watch for
+  // OUR marks specifically being removed (cheap check) instead of re-scanning
+  // the whole document on every unrelated DOM change (expensive, and was the
+  // cause of major slowdowns on pages with frequent unrelated DOM churn).
   var contentObserver = null;
   var reanchorTimer = null;
   function ensureContentObserver() {
     if (contentObserver) contentObserver.disconnect();
-    contentObserver = new MutationObserver(function () {
-      clearTimeout(reanchorTimer);
-      reanchorTimer = setTimeout(reanchorMissing, 150);
+    contentObserver = new MutationObserver(function (mutations) {
+      var lost = false;
+      for (var i = 0; i < mutations.length; i++) {
+        var removed = mutations[i].removedNodes;
+        for (var j = 0; j < removed.length; j++) {
+          var node = removed[j];
+          if (node.nodeType !== 1) continue;
+          if (node.matches && node.matches('mark.ann-highlight')) {
+            anchored.delete(node.dataset.annId);
+            lost = true;
+          } else if (node.querySelectorAll) {
+            node.querySelectorAll('mark.ann-highlight').forEach(function (m) { anchored.delete(m.dataset.annId); lost = true; });
+          }
+        }
+      }
+      if (lost) {
+        clearTimeout(reanchorTimer);
+        reanchorTimer = setTimeout(reanchorMissing, 150);
+      }
     });
     contentObserver.observe(document.body, { childList: true, subtree: true });
   }
 
   function reanchorMissing() {
     annotations.forEach(function (ann) {
-      if (!document.querySelector('mark[data-ann-id="' + ann.id + '"]')) applyHighlight(ann);
+      if (!anchored.has(ann.id)) applyHighlight(ann);
     });
+    renderPanel();
   }
 
   function onNavigate() {
@@ -78,17 +108,23 @@
     anchored = new Set();
     annotations = [];
     renderPanel();
-    // Wait for React to finish rendering the new page content
+
+    // Snapshot content now (before the new page renders) so we know when to highlight.
     var snap = (getContentRoot() || document.body).textContent.slice(0, 300);
-    var tries = 0;
-    function waitChanged() {
-      var cur = (getContentRoot() || document.body).textContent.slice(0, 300);
-      if (cur !== snap && cur.trim().length > 80) { loadAnnotations(); return; }
-      if (++tries < 40) { setTimeout(waitChanged, 100); return; }
-      // Content never visibly changed (e.g. cached route on back/forward) — load anyway
-      loadAnnotations();
-    }
-    setTimeout(waitChanged, 50);
+
+    // Fetch immediately: the panel/comment list doesn't need the DOM to be ready.
+    fetchAnnotations(function (list) {
+      var tries = 0;
+      function waitChanged() {
+        var cur = (getContentRoot() || document.body).textContent.slice(0, 300);
+        if (cur !== snap && cur.trim().length > 80) { list.forEach(applyHighlight); renderPanel(); return; }
+        if (++tries < 60) { setTimeout(waitChanged, 50); return; }
+        // Content never visibly changed (e.g. cached route on back/forward) — highlight anyway
+        list.forEach(applyHighlight);
+        renderPanel();
+      }
+      setTimeout(waitChanged, 30);
+    });
   }
 
   // Wait until main content is rendered (handles VitePress hydration delay)
@@ -105,6 +141,7 @@
   function getContentRoot() {
     return document.querySelector('.vp-doc') ||
            document.querySelector('main article') ||
+           document.querySelector('.main-wrapper, [class*="mainWrapper"]') ||
            document.querySelector('main') ||
            document.querySelector('[class*="content"]') ||
            document.body;
@@ -464,10 +501,14 @@
       '<div class="ann-panel-header">' +
       '  <h3 class="ann-panel-title">Opmerkingen</h3>' +
       '  <span class="ann-count"></span>' +
+      '  <button class="ann-help-btn" title="Toon de handleiding">Handleiding</button>' +
       '  <button class="ann-close-btn" title="Sluit paneel">\u2715</button>' +
       '</div>' +
       '<div class="ann-list"></div>';
     el.querySelector('.ann-close-btn').addEventListener('click', closePanel);
+    el.querySelector('.ann-help-btn').addEventListener('click', function () {
+      window.open(location.origin + '/handleiding', '_blank');
+    });
     return el;
   }
 

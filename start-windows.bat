@@ -28,7 +28,7 @@ echo Review-tool wordt gestart...
 echo (Laat dit venster open zolang je de tool gebruikt. Sluiten of Ctrl+C stopt de server.)
 echo.
 
-start "" /min cmd /c "timeout /t 2 /nobreak >nul & start http://localhost:3000"
+start "" /min cmd /c "timeout /t 2 /nobreak >nul & start http://localhost:3000/setup"
 node server.js
 
 pause

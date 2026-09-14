@@ -27,7 +27,7 @@ echo "Review-tool wordt gestart..."
 echo "(Laat dit venster open zolang je de tool gebruikt. Sluiten of Ctrl+C stopt de server.)"
 echo ""
 
-( sleep 1.5 && open "http://localhost:3000" ) &
+( sleep 1.5 && open "http://localhost:3000/setup" ) &
 node server.js
 
 read -p "Druk op Enter om dit venster te sluiten..."

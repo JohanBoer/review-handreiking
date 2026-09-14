@@ -1,4 +1,5 @@
 {
   "remoteHost": "uitbetrouwbarebron.rijks.app",
-  "startPath": "/handreiking"
+  "startPath": "/",
+  "reviewerName": "Johan"
 }

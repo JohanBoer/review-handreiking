@@ -42,10 +42,11 @@ node server.js
 
 De poort is aan te passen via de omgevingsvariabele `PORT`.
 
-De eerste keer dat je de tool opent vraagt een pop-up naar de URL van de
-website die je wilt reviewen (bijv. `https://voorbeeld.nl/pagina`). Deze keuze
-wordt onthouden in `config.json`. Wil je later een andere website reviewen,
-ga dan naar http://localhost:3000/setup om dit te wijzigen.
+Bij het opstarten toont de tool altijd eerst een pop-up waar je je naam invult
+en een website kiest: via een dropdown met eerder gereviewde websites, of door
+een nieuwe URL in te vullen (bijv. `https://voorbeeld.nl/pagina`). Je naam
+wordt onthouden in `config.json` en hoeft niet steeds opnieuw ingevuld te
+worden.
 
 ## 3. Wat kun je ermee
 
@@ -55,5 +56,15 @@ ga dan naar http://localhost:3000/setup om dit te wijzigen.
 - Zijpaneel (rechtsonder) toont alle opmerkingen op de huidige pagina
 - Opmerkingen waarvan de tekst is gewijzigd in de bron worden als ⚠️ gemarkeerd
 - Navigeren tussen pagina's van de website werkt gewoon; opmerkingen worden per pagina opgeslagen
-- Alle opmerkingen worden opgeslagen in `annotations.json`
+- Alle opmerkingen worden opgeslagen in `annotations-<site>.json` (de eerste 10
+  letters van de website-URL, zonder `https://www.`); zo houden meerdere
+  gereviewde websites hun eigen opmerkingen. Het bestand bevat ook een `site`
+  veld met de exacte URL die gereviewd is, plus `reviewer` (jouw naam),
+  `firstReviewDate` (datum van de eerste opmerking) en `lastModified` (datum
+  van de laatste wijziging)
+
+## 4. Uitwisselen van review-opmerkingen. 
+
+In de map waarin de reviewtool is opgeslagen worden ook de annotatie-bestanden met reviewopmerkingen geplaatst. 
+Deze bestanden kan je met een collega uitwisselen. Als deze collega ook deze tool gebruikt kan hij dit bestand in de map zetten waarin deze tool staat en dan zijn de review-opmerkingen beschikbaar via de dropdown in het openingsscherm. 
 

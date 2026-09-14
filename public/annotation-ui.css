@@ -266,6 +266,24 @@ mark.ann-highlight--active {
   color: #374151;
 }
 
+.ann-help-btn {
+  background: transparent;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+
+.ann-help-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
 .ann-list {
   flex: 1;
   overflow-y: auto;
