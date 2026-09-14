@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 REM Dubbelklikbare starter voor Windows: controleert Node.js, start de server en opent de browser.
 cd /d "%~dp0"
 
@@ -9,7 +9,7 @@ if errorlevel 1 (
   where winget >nul 2>nul
   if not errorlevel 1 (
     set /p ans=Node.js installeren via winget? ^(j/n^):
-    if /i "%ans%"=="j" (
+    if /i "!ans!"=="j" (
       winget install -e --id OpenJS.NodeJS.LTS
       echo.
       echo Node.js is geinstalleerd. Sluit dit venster en start start-windows.bat opnieuw.
@@ -30,5 +30,10 @@ echo.
 
 start "" /min cmd /c "timeout /t 2 /nobreak >nul & start http://localhost:3000/setup"
 node server.js
+if errorlevel 1 (
+  echo.
+  echo De server is gestopt met een fout ^(zie hierboven^). Controleer of poort 3000 al in gebruik is.
+)
+
 
 pause
