@@ -98,7 +98,7 @@ function setupPageHtml(errorMsg, sites) {
       e.preventDefault();
       var data = new FormData(e.target);
       var url = data.get('url').trim();
-      if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+      if (url && !/^https?:/i.test(url)) url = 'https://' + url;
       fetch('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
