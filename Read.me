@@ -1,27 +1,59 @@
 # Review Handreiking
 
-Lokale review-tool voor https://uitbetrouwbarebron.rijks.app/handreiking.
-Werkt als een proxy: de handreiking wordt via een lokale server geserveerd zodat
-je tekstfragmenten kunt selecteren en van opmerkingen kunt voorzien — vergelijkbaar
-met de commentaarfunctie in Word.
+Lokale review-tool om een willekeurige website van commentaar te voorzien.
+Werkt als een proxy: de website wordt via een lokale server geserveerd zodat
+je tekstfragmenten kunt selecteren en van opmerkingen kunt voorzien —
+vergelijkbaar met de commentaarfunctie in Word.
 
-## Functionaliteit
+## 1. Lokaal ophalen
+
+Je hebt geen GitHub-account of git nodig om dit te gebruiken.
+
+- Download [`review-handreiking.zip`](review-handreiking.zip)
+  uit deze repo (bovenaan de bestandenlijst) en pak het uit op je computer.
+
+Vereist is alleen Node.js (v18 of hoger); er hoeft niets extra's geïnstalleerd
+te worden (`npm install` is niet nodig).
+
+## 2. Opstarten
+
+Ga naar de uitgepakte map en dubbelklik op het opstartscript voor
+jouw besturingssysteem:
+
+- **macOS**: `start-mac.command`
+- **Windows**: `start-windows.bat`
+
+Het script controleert of Node.js aanwezig is (en biedt aan dit te installeren
+via Homebrew resp. winget, of verwijst naar https://nodejs.org als dat niet
+lukt), start daarna de server en opent automatisch http://localhost:3000 in de
+browser. Het venster dat opent moet openblijven zolang je de tool gebruikt;
+sluiten of Ctrl+C stopt de server.
+
+> macOS kan bij het eerste gebruik een waarschuwing tonen dat het script van
+> een "onbekende ontwikkelaar" komt. Ga naar Systeeminstellingen → Privacy en
+> beveiliging en kies "Toch openen", of open het script via rechtermuisklik →
+> Open.
+
+Liever handmatig starten (of geen dubbelklikbaar script beschikbaar)?
+
+```bash
+node server.js
+```
+
+De poort is aan te passen via de omgevingsvariabele `PORT`.
+
+De eerste keer dat je de tool opent vraagt een pop-up naar de URL van de
+website die je wilt reviewen (bijv. `https://voorbeeld.nl/pagina`). Deze keuze
+wordt onthouden in `config.json`. Wil je later een andere website reviewen,
+ga dan naar http://localhost:3000/setup om dit te wijzigen.
+
+## 3. Wat kun je ermee
 
 - Selecteer tekst → klik "💬 Opmerking toevoegen" → typ opmerking → Opslaan
 - Geselecteerde tekst wordt geel gemarkeerd in het document
 - Klik op een markering om de opmerking te bewerken of te verwijderen
 - Zijpaneel (rechtsonder) toont alle opmerkingen op de huidige pagina
 - Opmerkingen waarvan de tekst is gewijzigd in de bron worden als ⚠️ gemarkeerd
-- Navigeren tussen hoofdstukken via het menu werkt gewoon; opmerkingen worden per pagina opgeslagen
+- Navigeren tussen pagina's van de website werkt gewoon; opmerkingen worden per pagina opgeslagen
 - Alle opmerkingen worden opgeslagen in `annotations.json`
 
-## Opstarten
-
-Node.js (v18 of hoger) is vereist. Geen npm install nodig.
-
-```bash
-node server.js
-```
-
-Open daarna http://localhost:3000 in de browser.
-De poort is aan te passen via de omgevingsvariabele `PORT`.

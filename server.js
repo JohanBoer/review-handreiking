@@ -9,10 +9,75 @@ import { createGunzip } from 'node:zlib';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ANNOTATIONS_FILE = path.join(__dirname, 'annotations.json');
 const BACKUP_DIR = path.join(__dirname, 'backup');
-const REMOTE_HOST = 'uitbetrouwbarebron.rijks.app';
+const CONFIG_FILE = path.join(__dirname, 'config.json');
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const DOM_ESC = REMOTE_HOST.replace(/\./g, '\\.');
+
+// ─── Target website config (set via the /setup popup, persisted locally) ─────
+
+let REMOTE_HOST = null;
+let START_PATH = '/';
+
+async function loadConfig() {
+  try {
+    const cfg = JSON.parse(await fs.readFile(CONFIG_FILE, 'utf-8'));
+    if (cfg.remoteHost) { REMOTE_HOST = cfg.remoteHost; START_PATH = cfg.startPath || '/'; }
+  } catch { /* no config yet — user will be prompted via /setup */ }
+}
+
+async function saveConfig(remoteHost, startPath) {
+  REMOTE_HOST = remoteHost;
+  START_PATH = startPath || '/';
+  await fs.writeFile(CONFIG_FILE, JSON.stringify({ remoteHost, startPath: START_PATH }, null, 2), 'utf-8');
+}
+
+function domEsc() {
+  return REMOTE_HOST.replace(/\./g, '\\.');
+}
+
+function setupPageHtml(errorMsg) {
+  return `<!doctype html><html lang="nl"><head><meta charset="utf-8">
+<title>Review-tool instellen</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:480px;margin:15vh auto;padding:0 24px;color:#1a1a1a}
+  h1{font-size:1.3rem}
+  input{width:100%;box-sizing:border-box;padding:10px;font-size:1rem;border:1px solid #ccc;border-radius:6px;margin:12px 0}
+  button{padding:10px 18px;font-size:1rem;border:none;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer}
+  button:hover{background:#1d4ed8}
+  .err{color:#b91c1c;margin-top:8px}
+  p{color:#555;font-size:.9rem}
+</style></head>
+<body>
+  <h1>📝 Welke website wil je reviewen?</h1>
+  <p>Vul de URL in van de website die je via deze tool wilt bekijken en annoteren.</p>
+  <form id="f">
+    <input name="url" type="url" placeholder="https://voorbeeld.nl/pagina" required autofocus>
+    <button type="submit">Starten</button>
+    <div class="err" id="err">${errorMsg ? esc(errorMsg) : ''}</div>
+  </form>
+  <script>
+    document.getElementById('f').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var url = new FormData(e.target).get('url');
+      fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url }),
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { document.getElementById('err').textContent = res.d.error || 'Ongeldige URL'; return; }
+          location.href = res.d.redirect;
+        })
+        .catch(function () { document.getElementById('err').textContent = 'Kon niet verbinden met de server.'; });
+    });
+  </script>
+</body></html>`;
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 
 // ─── Annotations storage ──────────────────────────────────────────────────────
 
@@ -83,7 +148,7 @@ function rewriteHtml(html, remotePath) {
 
   // Absolute same-domain URLs
   html = html.replace(
-    new RegExp(`(href|src|action)="https://${DOM_ESC}(/[^"#]*)"`, 'gi'),
+    new RegExp(`(href|src|action)="https://${domEsc()}(/[^"#]*)"`, 'gi'),
     (_, attr, p) => `${attr}="/proxy${p}"`
   );
 
@@ -118,7 +183,7 @@ function rewriteHtml(html, remotePath) {
 
 function rewriteCss(css) {
   css = css.replace(
-    new RegExp(`url\\(["']?https://${DOM_ESC}(/[^"')]+)["']?\\)`, 'gi'),
+    new RegExp(`url\\(["']?https://${domEsc()}(/[^"')]+)["']?\\)`, 'gi'),
     (_, p) => `url('/proxy${p}')`
   );
   css = css.replace(/url\(["']?(\/[^"')]+)["']?\)/g, (m, p) => {
@@ -172,10 +237,33 @@ const server = http.createServer(async (req, res) => {
     const { pathname } = new URL(req.url, 'http://x');
     const method = req.method.toUpperCase();
 
-    // Root → redirect to handreiking
+    // Root → redirect to the configured site, or show the setup popup first
     if (pathname === '/') {
-      res.writeHead(302, { Location: '/proxy/handreiking' });
+      if (!REMOTE_HOST) { res.writeHead(302, { Location: '/setup' }); return res.end(); }
+      res.writeHead(302, { Location: `/proxy${START_PATH}` });
       return res.end();
+    }
+
+    // Setup popup: choose which website to review
+    if (pathname === '/setup') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(setupPageHtml());
+      return;
+    }
+
+    if (pathname === '/api/config') {
+      if (method === 'GET') return jsonRes(res, 200, { remoteHost: REMOTE_HOST, startPath: START_PATH });
+      if (method === 'POST') {
+        const body = await readBody(req).catch(() => null);
+        let target;
+        try { target = new URL(body?.url); }
+        catch { return jsonRes(res, 400, { error: 'Vul een geldige URL in, bijv. https://voorbeeld.nl/pagina' }); }
+        if (!/^https?:$/.test(target.protocol))
+          return jsonRes(res, 400, { error: 'Alleen http(s) URLs worden ondersteund' });
+        await saveConfig(target.hostname, target.pathname || '/');
+        return jsonRes(res, 200, { redirect: `/proxy${START_PATH}` });
+      }
+      return jsonRes(res, 405, { error: 'Method not allowed' });
     }
 
     // Static annotation UI files
@@ -245,6 +333,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // Proxy: strip /proxy prefix if present, then forward everything to remote
+    if (!REMOTE_HOST) { res.writeHead(302, { Location: '/setup' }); return res.end(); }
     const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
     let remotePath = (pathname.startsWith('/proxy/') ? pathname.slice('/proxy'.length) : pathname) + qs;
     if (!remotePath || remotePath === '' || remotePath === '?') remotePath = '/';
@@ -260,9 +349,12 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+await loadConfig();
+
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`\n📝  Handreiking Review Tool`);
   console.log(`    → http://localhost:${PORT}`);
   console.log(`\n    Selecteer tekst op de pagina om opmerkingen toe te voegen.`);
   console.log(`    Opmerkingen worden opgeslagen in annotations.json\n`);
+  if (!REMOTE_HOST) console.log(`    Open de link hierboven om de te reviewen website in te stellen.\n`);
 });
