@@ -82,7 +82,7 @@ function setupPageHtml(errorMsg, sites) {
       ${options}
     </select>` : ''}
     <label for="url">Website-URL</label>
-    <input id="url" name="url" type="url" placeholder="https://voorbeeld.nl/pagina" required autofocus>
+    <input id="url" name="url" type="text" placeholder="https://voorbeeld.nl/pagina" required autofocus>
     <button type="submit">Starten</button>
     <div class="err" id="err">${errorMsg ? esc(errorMsg) : ''}</div>
   </form>
@@ -97,10 +97,12 @@ function setupPageHtml(errorMsg, sites) {
     document.getElementById('f').addEventListener('submit', function (e) {
       e.preventDefault();
       var data = new FormData(e.target);
+      var url = data.get('url').trim();
+      if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
       fetch('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: data.get('url'), name: data.get('name') }),
+        body: JSON.stringify({ url: url, name: data.get('name') }),
       })
         .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
         .then(function (res) {
@@ -393,7 +395,7 @@ const server = http.createServer(async (req, res) => {
 
     // Setup popup: choose which website to review
     if (pathname === '/setup') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(setupPageHtml(null, await listReviewedSites()));
       return;
     }
@@ -403,7 +405,7 @@ const server = http.createServer(async (req, res) => {
       let md;
       try { md = await fs.readFile(path.join(__dirname, 'Read.me'), 'utf-8'); }
       catch { md = '# Handleiding niet gevonden'; }
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(handleidingPageHtml(md));
       return;
     }
