@@ -1,1 +1,27 @@
-tst
+# Review Handreiking
+
+Lokale review-tool voor https://uitbetrouwbarebron.rijks.app/handreiking.
+Werkt als een proxy: de handreiking wordt via een lokale server geserveerd zodat
+je tekstfragmenten kunt selecteren en van opmerkingen kunt voorzien — vergelijkbaar
+met de commentaarfunctie in Word.
+
+## Functionaliteit
+
+- Selecteer tekst → klik "💬 Opmerking toevoegen" → typ opmerking → Opslaan
+- Geselecteerde tekst wordt geel gemarkeerd in het document
+- Klik op een markering om de opmerking te bewerken of te verwijderen
+- Zijpaneel (rechtsonder) toont alle opmerkingen op de huidige pagina
+- Opmerkingen waarvan de tekst is gewijzigd in de bron worden als ⚠️ gemarkeerd
+- Navigeren tussen hoofdstukken via het menu werkt gewoon; opmerkingen worden per pagina opgeslagen
+- Alle opmerkingen worden opgeslagen in `annotations.json`
+
+## Opstarten
+
+Node.js (v18 of hoger) is vereist. Geen npm install nodig.
+
+```bash
+node server.js
+```
+
+Open daarna http://localhost:3000 in de browser.
+De poort is aan te passen via de omgevingsvariabele `PORT`.

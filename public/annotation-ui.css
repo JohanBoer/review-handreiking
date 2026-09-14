@@ -1,0 +1,512 @@
+/* ════════════════════════════════════════════════════════
+   Handreiking Review Tool – Annotation UI
+   Scoped under .ann-* to avoid conflicts with the site's CSS
+   ════════════════════════════════════════════════════════ */
+
+/* ── Text highlights ──────────────────────────────────── */
+
+mark.ann-highlight {
+  background: rgba(253, 224, 71, 0.45);
+  border-bottom: 2px solid #f59e0b;
+  border-radius: 2px;
+  cursor: pointer;
+  padding: 0 1px;
+  transition: background 0.15s;
+  /* Override any site reset that removes mark styling */
+  display: inline;
+  color: inherit;
+}
+
+mark.ann-highlight:hover {
+  background: rgba(251, 146, 60, 0.4);
+  border-bottom-color: #ea580c;
+}
+
+mark.ann-highlight--active {
+  background: rgba(251, 146, 60, 0.55);
+  border-bottom-color: #ea580c;
+  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.25);
+}
+
+/* ── "Add comment" floating button ───────────────────── */
+
+.ann-add-btn {
+  position: fixed;
+  z-index: 10001;
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  line-height: 1.4;
+  transition: background 0.15s;
+  pointer-events: auto;
+}
+
+.ann-add-btn:hover {
+  background: #1e40af;
+}
+
+/* ── Comment input form ───────────────────────────────── */
+
+.ann-form {
+  position: fixed;
+  z-index: 10002;
+  width: 320px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.ann-form-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.ann-form-ta {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  color: #111827;
+  resize: vertical;
+  outline: none;
+  background: #fff;
+}
+
+.ann-form-ta:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+}
+
+.ann-form-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ann-form-submit {
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 18px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 0.15s;
+}
+
+.ann-form-submit:hover {
+  background: #1e40af;
+}
+
+.ann-form-cancel {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ann-form-cancel:hover {
+  background: #f9fafb;
+  color: #374151;
+}
+
+.ann-form-hint {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-left: auto;
+}
+
+/* ── Toggle button (FAB) ──────────────────────────────── */
+
+.ann-toggle {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9999;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(29, 78, 216, 0.4);
+  transition: background 0.15s, transform 0.2s, right 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ann-toggle:hover {
+  background: #1e40af;
+  transform: scale(1.08);
+}
+
+/* Badge with annotation count */
+.ann-toggle[data-count]:not([data-count="0"])::after {
+  content: attr(data-count);
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: system-ui, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+}
+
+/* Shift FAB left when panel is open (panel is next sibling) */
+.ann-panel--open ~ .ann-toggle {
+  right: 388px; /* 360px panel + 28px margin */
+}
+
+/* ── Annotations sidebar panel ────────────────────────── */
+
+.ann-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+  width: 360px;
+  background: #fff;
+  border-left: 1px solid #e5e7eb;
+  box-shadow: -6px 0 32px rgba(0, 0, 0, 0.09);
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, sans-serif;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ann-panel--open {
+  transform: none;
+}
+
+.ann-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  background: #f9fafb;
+  flex-shrink: 0;
+}
+
+.ann-panel-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  flex: 1;
+  /* Override any site h3 styles */
+  letter-spacing: normal;
+  line-height: 1.4;
+  border: none;
+  padding: 0;
+}
+
+.ann-count {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.ann-close-btn {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  font-family: inherit;
+  transition: background 0.12s, color 0.12s;
+}
+
+.ann-close-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.ann-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  scroll-behavior: smooth;
+}
+
+.ann-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 36px 16px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Annotation items in the sidebar ─────────────────── */
+
+.ann-item {
+  background: #fafafa;
+  border: 1px solid #f3f4f6;
+  border-left: 3px solid #f59e0b;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.ann-item:hover {
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-left-color: #f59e0b;
+}
+
+.ann-item--active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  border-left-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.1);
+}
+
+.ann-quote {
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.ann-quote::before { content: '\201C'; }
+.ann-quote::after  { content: '\201D'; }
+
+.ann-comment {
+  font-size: 14px;
+  color: #111827;
+  line-height: 1.6;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ann-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.ann-date {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.ann-del {
+  background: transparent;
+  border: none;
+  color: #d1d5db;
+  cursor: pointer;
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  line-height: 1;
+  transition: background 0.12s, color 0.12s;
+}
+
+.ann-del:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+/* ── Mark click popup ────────────────────────────────── */
+
+.ann-mark-popup {
+  position: fixed;
+  z-index: 10003;
+  width: 360px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.ann-popup-comment {
+  font-size: 13px;
+  color: #111827;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  max-height: 80px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ann-popup-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ann-popup-show {
+  flex: 1;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ann-popup-show:hover { background: #f9fafb; }
+
+.ann-popup-del {
+  background: transparent;
+  border: 1px solid #fca5a5;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #dc2626;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ann-popup-del:hover { background: #fef2f2; }
+
+.ann-popup-ta {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  color: #111827;
+  margin-bottom: 8px;
+  background: #fff;
+}
+
+.ann-popup-ta:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.12);
+}
+
+.ann-popup-save {
+  flex: 1;
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ann-popup-save:hover { background: #1e40af; }
+
+.ann-popup-cancel {
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ann-popup-cancel:hover { background: #f9fafb; }
+
+.ann-popup-edit {
+  flex: 1;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ann-popup-edit:hover { background: #f9fafb; }
+
+/* ── Orphaned annotations (text no longer found) ─── */
+
+.ann-item--orphaned {
+  border-left-color: #f97316;
+  background: #fff7ed;
+}
+
+.ann-item--orphaned:hover {
+  background: #ffedd5;
+  border-color: #fed7aa;
+  border-left-color: #f97316;
+}
+
+.ann-item--orphaned .ann-quote {
+  color: #9a3412;
+  text-decoration: line-through;
+  text-decoration-color: #f97316;
+}
+
+.ann-orphan-badge {
+  font-size: 11px;
+  color: #c2410c;
+  font-style: normal;
+  white-space: nowrap;
+  margin-right: auto;
+  padding-left: 4px;
+}
