@@ -129,7 +129,7 @@ function fetchRemote(url, hops = 8) {
       const stream = headers['content-encoding'] === 'gzip' ? res.pipe(createGunzip()) : res;
       const chunks = [];
       stream.on('data', c => chunks.push(c));
-      stream.on('end', () => resolve({ statusCode, headers, body: Buffer.concat(chunks) }));
+      stream.on('end', () => resolve({ statusCode, headers, body: Buffer.concat(chunks), finalUrl: url }));
       stream.on('error', reject);
       res.on('error', reject);
     }).on('error', reject);
@@ -260,7 +260,17 @@ const server = http.createServer(async (req, res) => {
         catch { return jsonRes(res, 400, { error: 'Vul een geldige URL in, bijv. https://voorbeeld.nl/pagina' }); }
         if (!/^https?:$/.test(target.protocol))
           return jsonRes(res, 400, { error: 'Alleen http(s) URLs worden ondersteund' });
-        await saveConfig(target.hostname, target.pathname || '/');
+        // Resolve redirects up front so a marketing/redirect domain doesn't
+        // silently break every asset request (redirects can drop the path).
+        let finalHost = target.hostname;
+        let finalPath = target.pathname || '/';
+        try {
+          const probe = await fetchRemote(target.href);
+          const resolved = new URL(probe.finalUrl);
+          finalHost = resolved.hostname;
+          finalPath = resolved.pathname || '/';
+        } catch { /* probe failed — fall back to the URL as typed */ }
+        await saveConfig(finalHost, finalPath);
         return jsonRes(res, 200, { redirect: `/proxy${START_PATH}` });
       }
       return jsonRes(res, 405, { error: 'Method not allowed' });
