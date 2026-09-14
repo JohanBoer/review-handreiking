@@ -403,7 +403,7 @@ const server = http.createServer(async (req, res) => {
     // Handleiding: toont Readme als leesbare pagina
     if (pathname === '/handleiding') {
       let md;
-      try { md = await fs.readFile(path.join(__dirname, 'Readme'), 'utf-8'); }
+      try { md = await fs.readFile(path.join(__dirname, 'Readme.md'), 'utf-8'); }
       catch { md = '# Handleiding niet gevonden'; }
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(handleidingPageHtml(md));
